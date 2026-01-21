@@ -1,104 +1,67 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Crazy Steal Joiner</title>
-
 <style>
-body { background:#0e0e0e; color:white; font-family:Arial; padding:20px; }
-.card { background:#1c1c1c; padding:15px; border-radius:10px; margin-bottom:10px; }
-.join { color:#4da3ff; font-weight:bold; }
+body{background:#0e0e0e;color:white;font-family:Arial;padding:20px}
+.card{background:#1c1c1c;padding:15px;border-radius:10px;margin-bottom:10px}
+.join{color:#4da3ff;font-weight:bold}
 </style>
 </head>
-
 <body>
 
-<h1>🧠 Crazy Steal Joiner (AUTO)</h1>
-<p>🔥 10M 이상 + 변이 자동 계산</p>
+<h1>🧠 Crazy Steal Joiner (LIVE)</h1>
 <div id="list"></div>
 
 <script>
 const PLACE_ID = 109983668079237;
 const WEBHOOK = "https://discord.com/api/webhooks/1463410372798189737/OGUyM2EjvRIGGFc-mYf-0SMCBIlF5L0TSHoDOLws28RtyLPUQf05sDE8UE-oxzjIOwh1";
 
-const MUTATION_MULTIPLIER = {
-  Normal: 1,
-  Gold: 1.25,
-  Diamond: 1.5
-};
-
+const MUTATION = { Normal:1, Gold:1.25, Diamond:1.5 };
 let sent = new Set();
 
-async function loadServers() {
-  const res = await fetch("servers.json?" + Date.now());
-  const servers = await res.json();
+async function refresh(){
+  const res = await fetch("servers.json?"+Date.now());
+  const data = await res.json();
 
-  document.getElementById("list").innerHTML = "";
+  list.innerHTML = "";
 
-  servers.forEach(s => {
-    const multiplier = MUTATION_MULTIPLIER[s.mutation] || 1;
-    const total = s.base * multiplier;
-
-    if (total < 10000000) return;
+  data.forEach(s=>{
+    const total = s.base * (MUTATION[s.mutation]||1);
+    if(total < 10000000) return;
 
     const link =
 `https://chillihub1.github.io/chillihub-joiner/?placeId=${PLACE_ID}&gameInstanceId=${s.jobId}`;
 
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerHTML=`
       <h2>${s.name}</h2>
-      <p>🧬 ${s.mutation} (${multiplier}x)</p>
-      <p>💰 ${(total/1e6).toFixed(1)}M /s</p>
+      <p>${s.mutation} | ${(total/1e6).toFixed(1)}M</p>
       <p>👥 ${s.players}</p>
       <a class="join" href="${link}" target="_blank">Click to Join</a>
     `;
+    list.appendChild(d);
 
-    document.getElementById("list").appendChild(div);
-
-    if (!sent.has(s.jobId)) {
-      sendDiscord(s, total, link);
+    if(!sent.has(s.jobId)){
+      fetch(WEBHOOK,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          embeds:[{
+            title:s.name,
+            description:`💰 ${(total/1e6).toFixed(1)}M`,
+            fields:[{name:"Join",value:`[Click](${link})`}]
+          }]
+        })
+      });
       sent.add(s.jobId);
     }
   });
 }
 
-<input id="joinInput" placeholder="Join 링크 붙여넣기">
-<button onclick="addFromLink()">추가</button>
-
-<script>
-function addFromLink() {
-  const url = document.getElementById("joinInput").value;
-  const params = new URL(url).searchParams;
-  const jobId = params.get("gameInstanceId");
-
-  if (!jobId) return alert("jobId 못 찾음");
-
-  alert("jobId 추출됨: " + jobId);
-}
-  
+setInterval(refresh, 500);
 </script>
-function sendDiscord(s, total, link) {
-  fetch(WEBHOOK, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
-      embeds:[{
-        title:`🧠 ${s.name}`,
-        description:`💰 ${(total/1e6).toFixed(1)}M /s`,
-        fields:[
-          { name:"Mutation", value:s.mutation, inline:true },
-          { name:"Players", value:s.players, inline:true },
-          { name:"Join", value:`[Click to Join](${link})` }
-        ]
-      }]
-    })
-  });
-}
-
-/* 🔥 0.5초 자동 갱신 */
-setInterval(loadServers, 500);
-</script>
-
 </body>
 </html>
