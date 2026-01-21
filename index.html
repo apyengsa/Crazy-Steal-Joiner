@@ -63,6 +63,21 @@ async function loadServers() {
   });
 }
 
+<input id="joinInput" placeholder="Join 링크 붙여넣기">
+<button onclick="addFromLink()">추가</button>
+
+<script>
+function addFromLink() {
+  const url = document.getElementById("joinInput").value;
+  const params = new URL(url).searchParams;
+  const jobId = params.get("gameInstanceId");
+
+  if (!jobId) return alert("jobId 못 찾음");
+
+  alert("jobId 추출됨: " + jobId);
+}
+  
+</script>
 function sendDiscord(s, total, link) {
   fetch(WEBHOOK, {
     method:"POST",
