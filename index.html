@@ -1,51 +1,89 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>Crazy Steal Joiner</title>
-  <style>
-    body {
-      background: #0f0f0f;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    .card {
-      background: #1e1e1e;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    .join {
-      color: #4da3ff;
-      text-decoration: none;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Crazy Steal Joiner</title>
+
+<style>
+body { background:#0e0e0e; color:white; font-family:Arial; padding:20px; }
+.card { background:#1c1c1c; padding:15px; border-radius:10px; margin-bottom:10px; }
+.join { color:#4da3ff; font-weight:bold; }
+</style>
 </head>
+
 <body>
 
-<h1>🧠 Crazy Steal Joiner</h1>
+<h1>🧠 Crazy Steal Joiner (AUTO)</h1>
+<p>🔥 10M 이상 + 변이 자동 계산</p>
+<div id="list"></div>
 
-<div class="card">
-  <h2>La grande combinasion</h2>
-  <p>💰 Money: $10M/s</p>
-  <p>👥 Players: 7/8</p>
+<script>
+const PLACE_ID = 109983668079237;
+const WEBHOOK = "https://discord.com/api/webhooks/1463410372798189737/OGUyM2EjvRIGGFc-mYf-0SMCBIlF5L0TSHoDOLws28RtyLPUQf05sDE8UE-oxzjIOwh1";
 
-  <a class="join"
-     href="https://chillihub1.github.io/chillihub-joiner/?placeId=109983668079237&gameInstanceId=2bfe8e63-5e99-4ff5-8217-c350574a15be"
-     target="_blank">
-     Click to Join
-  </a>
+const MUTATION_MULTIPLIER = {
+  Normal: 1,
+  Gold: 1.25,
+  Diamond: 1.5
+};
 
-  <pre>
-game:GetService("TeleportService"):TeleportToPlaceInstance(
-109983668079237,
-"2bfe8e63-5e99-4ff5-8217-c350574a15be",
-game.Players.LocalPlayer
-)
-  </pre>
-</div>
+let sent = new Set();
+
+async function loadServers() {
+  const res = await fetch("servers.json?" + Date.now());
+  const servers = await res.json();
+
+  document.getElementById("list").innerHTML = "";
+
+  servers.forEach(s => {
+    const multiplier = MUTATION_MULTIPLIER[s.mutation] || 1;
+    const total = s.base * multiplier;
+
+    if (total < 10000000) return;
+
+    const link =
+`https://chillihub1.github.io/chillihub-joiner/?placeId=${PLACE_ID}&gameInstanceId=${s.jobId}`;
+
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <h2>${s.name}</h2>
+      <p>🧬 ${s.mutation} (${multiplier}x)</p>
+      <p>💰 ${(total/1e6).toFixed(1)}M /s</p>
+      <p>👥 ${s.players}</p>
+      <a class="join" href="${link}" target="_blank">Click to Join</a>
+    `;
+
+    document.getElementById("list").appendChild(div);
+
+    if (!sent.has(s.jobId)) {
+      sendDiscord(s, total, link);
+      sent.add(s.jobId);
+    }
+  });
+}
+
+function sendDiscord(s, total, link) {
+  fetch(WEBHOOK, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      embeds:[{
+        title:`🧠 ${s.name}`,
+        description:`💰 ${(total/1e6).toFixed(1)}M /s`,
+        fields:[
+          { name:"Mutation", value:s.mutation, inline:true },
+          { name:"Players", value:s.players, inline:true },
+          { name:"Join", value:`[Click to Join](${link})` }
+        ]
+      }]
+    })
+  });
+}
+
+/* 🔥 0.5초 자동 갱신 */
+setInterval(loadServers, 500);
+</script>
 
 </body>
 </html>
